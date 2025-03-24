@@ -14,11 +14,10 @@
     <div class="about-content">
         <div class="about-text">
             <h2>Наша система управления</h2>
-            <p>Профессиональное решение для мониторинга и управления дронами на базе Raspberry Pi с интеграцией с Clover.</p>
-            <p>Контролируйте полеты, получайте телеметрию и управляйте задачами из единого центра.</p>
+            <p>Профессиональное решение для мониторинга и управления дронами.</p>
         </div>
         <div class="about-image">
-            <img src="/static/img/drone-icon.png" alt="Иконка дрона">
+            <img src="{{ url_for('static', filename='img/drone-icon.png') }}" alt="Иконка дрона">
         </div>
     </div>
 </section>
@@ -27,40 +26,18 @@
 <section class="drones-section">
     <h2>Доступные дроны</h2>
     <div class="drones-list">
-        <!-- Пример одного дрона -->
-        <div class="drone-card">
-            <div class="drone-status status-idle"></div>
-            <h3>Clover-001</h3>
-            <p class="drone-info">
-                <span class="label">Статус:</span> Ожидание
-            </p>
-            <p class="drone-info">
-                <span class="label">IP:</span> 192.168.1.100
-            </p>
-            <div class="drone-actions">
-                <button class="btn control-btn">Управление</button>
-                <button class="btn details-btn">Подробнее</button>
-            </div>
-        </div>
-        
-        <!-- Место для дополнительных дронов при динамическом добавлении -->
         {% for drone in drones %}
-        <div class="drone-card">
+        <div class="drone-card" onclick="window.location.href='{{ url_for('website.drone_detail', drone_id=drone.id) }}'">
             <div class="drone-status status-{{ drone.status }}"></div>
             <h3>{{ drone.name }}</h3>
             <p class="drone-info">
                 <span class="label">Статус:</span> 
                 {% if drone.status == 'idle' %}Ожидание{% endif %}
                 {% if drone.status == 'busy' %}Выполнение задачи{% endif %}
-                {% if drone.status == 'error' %}Ошибка{% endif %}
             </p>
             <p class="drone-info">
                 <span class="label">IP:</span> {{ drone.ip_address }}
             </p>
-            <div class="drone-actions">
-                <button class="btn control-btn">Управление</button>
-                <button class="btn details-btn">Подробнее</button>
-            </div>
         </div>
         {% endfor %}
     </div>
@@ -70,11 +47,6 @@
 <footer class="footer">
     <div class="footer-content">
         <p>© 2023 Система управления дронами</p>
-        <div class="footer-links">
-            <a href="#">Документация</a>
-            <a href="#">Контакты</a>
-            <a href="#">Поддержка</a>
-        </div>
     </div>
 </footer>
 {% endblock %}

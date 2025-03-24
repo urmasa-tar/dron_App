@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template
+from flask import render_template
 from app.data import drones, tasks
-
-bp = Blueprint('website', __name__)
+from app.routes import bp  # Импортируем bp из родительского модуля
 
 @bp.route('/')
 def index():
@@ -11,6 +10,9 @@ def index():
 def drones_list():
     return render_template('drones.html', drones=drones)
 
-@bp.route('/tasks')
-def tasks_list():
-    return render_template('tasks.html', tasks=tasks)
+@bp.route('/drone/<int:drone_id>')
+def drone_detail(drone_id):
+    drone = next((d for d in drones if d['id'] == drone_id), None)
+    if not drone:
+        return "Drone not found", 404
+    return render_template('drone_detail.html', drone=drone)

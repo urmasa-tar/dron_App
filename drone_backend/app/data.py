@@ -1,6 +1,5 @@
 from datetime import datetime
 
-# Имитация "базы данных" в памяти
 drones = [
     {
         'id': 1,
@@ -27,14 +26,12 @@ tasks = [
         'id': 1,
         'drone_id': 2,
         'task_name': 'Инспекция территории',
-        'coordinates': {'lat': 55.7522, 'lon': 37.6156},
         'status': 'in_progress',
         'created_at': datetime.now()
     }
 ]
 
 def get_next_id(collection):
-    """Генерирует следующий ID для новой записи"""
     if not collection:
         return 1
     return max(item['id'] for item in collection) + 1
