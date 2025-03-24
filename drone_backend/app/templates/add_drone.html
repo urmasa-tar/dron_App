@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="add-drone-container">
+    <h1>Добавить новый дрон</h1>
+    <form method="POST">
+        <div class="form-group">
+            <label for="name">Название дрона:</label>
+            <input type="text" id="name" name="name" required class="form-control">
+        </div>
+        
+        <div class="form-group">
+            <label for="ip">IP адрес (опционально):</label>
+            <input type="text" id="ip" name="ip" placeholder="localhost" class="form-control">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Добавить дрон</button>
+        <a href="{{ url_for('website.index') }}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}

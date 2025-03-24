@@ -1,52 +1,69 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Заголовочный блок -->
-<header class="header">
-    <div class="header-content">
-        <h1>Управление парком дронов</h1>
-        <p class="subtitle">Мониторинг и контроль дронов в реальном времени</p>
+<div class="dashboard-container">
+    <h1>Мои дроны</h1>
+    
+    {% if not drones %}
+    <div class="no-drones">
+        <p>Нет добавленных дронов</p>
+        <a href="{{ url_for('website.add_drone') }}" class="btn">Добавить дрон</a>
     </div>
-</header>
-
-<!-- Блок описания с иконкой -->
-<section class="about-section">
-    <div class="about-content">
-        <div class="about-text">
-            <h2>Наша система управления</h2>
-            <p>Профессиональное решение для мониторинга и управления дронами.</p>
-        </div>
-        <div class="about-image">
-            <img src="{{ url_for('static', filename='img/drone-icon.png') }}" alt="Иконка дрона">
-        </div>
-    </div>
-</section>
-
-<!-- Блок доступных дронов -->
-<section class="drones-section">
-    <h2>Доступные дроны</h2>
-    <div class="drones-list">
+    {% else %}
+    <div class="drones-grid">
         {% for drone in drones %}
-        <div class="drone-card" onclick="window.location.href='{{ url_for('website.drone_detail', drone_id=drone.id) }}'">
-            <div class="drone-status status-{{ drone.status }}"></div>
-            <h3>{{ drone.name }}</h3>
-            <p class="drone-info">
-                <span class="label">Статус:</span> 
-                {% if drone.status == 'idle' %}Ожидание{% endif %}
-                {% if drone.status == 'busy' %}Выполнение задачи{% endif %}
-            </p>
-            <p class="drone-info">
-                <span class="label">IP:</span> {{ drone.ip_address }}
-            </p>
+        <div class="drone-card" onclick="window.location.href='{{ url_for('website.drone_detail', drone_id=drone['id']) }}'">
+            <div class="drone-card-header">
+                <h3>{{ drone['name'] }}</h3>
+                <span class="status-badge status-{{ drone['status'] }}">
+                    {{ drone['status'] }}
+                </span>
+            </div>
+            <div class="drone-card-body">
+                <p>ID: {{ drone['id'] }}</p>
+                <p>IP: {{ drone.get('ip', 'N/A') }}</p>
+                <div class="battery-indicator">
+                    <div class="battery-level" style="width: {{ drone.get('battery', 0) }}%;"></div>
+                    <span>{{ drone.get('battery', 0) }}%</span>
+                </div>
+            </div>
+            <div class="drone-card-actions">
+                <button class="btn small-btn" 
+                        onclick="event.stopPropagation(); connectDrone({{ drone['id'] }})">
+                    Подключить
+                </button>
+            </div>
         </div>
         {% endfor %}
     </div>
-</section>
+    {% endif %}
+</div>
 
-<!-- Нижняя часть сайта -->
-<footer class="footer">
-    <div class="footer-content">
-        <p>© 2023 Система управления дронами</p>
-    </div>
-</footer>
+<script>
+function connectDrone(droneId) {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Подключение...';
+    
+    fetch(`/api/drone/${droneId}/connect`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert(`Дрон ${droneId} подключен`);
+            window.location.reload();
+        } else {
+            alert(`Ошибка: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        alert(`Ошибка сети: ${error}`);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'Подключить';
+    });
+}
+</script>
 {% endblock %}

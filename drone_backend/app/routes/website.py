@@ -1,14 +1,26 @@
-from flask import render_template
-from app.data import drones, tasks
+from flask import render_template, request, redirect, url_for
+from app.data import drones, add_new_drone, get_next_id
 from app.routes import bp  # Импортируем bp из родительского модуля
 
 @bp.route('/')
 def index():
-    return render_template('index.html', drones=drones, tasks=tasks)
+    return render_template('index.html', drones=drones)
 
-@bp.route('/drones')
-def drones_list():
-    return render_template('drones.html', drones=drones)
+@bp.route('/add_drone', methods=['GET', 'POST'])
+def add_drone():
+    if request.method == 'POST':
+        drone_id = get_next_id(drones)
+        new_drone = {
+            'id': drone_id,
+            'name': request.form['name'],
+            'ip': request.form.get('ip', 'localhost'),
+            'status': 'offline',
+            'battery': 0,
+            'last_seen': None
+        }
+        add_new_drone(new_drone)
+        return redirect(url_for('website.index'))
+    return render_template('add_drone.html')
 
 @bp.route('/drone/<int:drone_id>')
 def drone_detail(drone_id):

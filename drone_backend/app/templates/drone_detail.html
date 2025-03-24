@@ -1,45 +1,78 @@
-@@ -0,0 +1,44 @@
- {% extends "base.html" %}
- 
- {% block content %}
- <!-- Шапка с иконкой и ссылкой -->
- <header class="drone-header">
-     <a href="{{ url_for('website.index') }}" class="back-link">← На главную</a>
-     <div class="drone-icon-container">
-         <img src="{{ url_for('static', filename='img/drone-icon.png') }}" alt="Иконка дрона" class="drone-icon">
-         <h1>{{ drone.name }}</h1>
-     </div>
- </header>
- 
- <!-- Блок статуса -->
- <section class="status-section">
-     <div class="status-card">
-         <h2>Текущий статус</h2>
-         <div class="status-indicator status-{{ drone.status }}"></div>
-         <div class="status-details">
-             <p><strong>IP адрес:</strong> {{ drone.ip_address }}</p>
-             <p><strong>Последняя активность:</strong> {{ drone.last_seen.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-             <p><strong>Батарея:</strong> {{ drone.battery }}%</p>
-             <p><strong>Сигнал:</strong> 
-                 {% if drone.signal == 'strong' %}Сильный{% endif %}
-                 {% if drone.signal == 'medium' %}Средний{% endif %}
-                 {% if drone.signal == 'weak' %}Слабый{% endif %}
-             </p>
-         </div>
-     </div>
- </section>
- 
- <!-- Блок управления -->
- <section class="control-section">
-     <div class="control-buttons">
-         <button class="control-btn start-btn">Start</button>
-         <button class="control-btn killswitch-btn">Kill Switch</button>
-         <button class="control-btn land-btn">Land</button>
-     </div>
- </section>
- 
- <!-- Подвал -->
- <footer class="drone-footer">
-     <p>Система управления дронами © 2023</p>
- </footer>
- {% endblock %}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="drone-detail-container status-{{ drone.status }}">
+    <!-- Заголовок -->
+    <div class="drone-header">
+        <a href="{{ url_for('website.index') }}" class="back-link">← Назад к списку</a>
+        <h1>{{ drone.name }}</h1>
+        <span class="status-badge status-{{ drone.status }}">
+            {% if drone.status == 'idle' %}Готов{% elif drone.status == 'busy' %}В работе{% else %}Оффлайн{% endif %}
+        </span>
+    </div>
+
+    <!-- Основная информация -->
+    <div class="drone-info">
+        <div class="info-card">
+            <h3>Технические данные</h3>
+            <div class="info-row">
+                <span>ID:</span>
+                <strong>#{{ drone.id }}</strong>
+            </div>
+            <div class="info-row">
+                <span>IP адрес:</span>
+                <strong>{{ drone.ip }}</strong>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3>Состояние</h3>
+            <div class="info-row">
+                <span>Батарея:</span>
+                <div class="battery-container">
+                    <div class="battery-level" style="width: {{ drone.get('battery', 0) }}%;"></div>
+                    <span class="battery-value">{{ drone.get('battery', 0) }}%</span>
+                </div>
+            </div>
+            <div class="info-row">
+                <span>Статус:</span>
+                <strong class="status-text">{{ drone.status }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Управление -->
+    <div class="control-panel">
+        <button class="control-btn takeoff-btn" onclick="sendDroneCommand('takeoff')">
+            Взлет
+        </button>
+        <button class="control-btn land-btn" onclick="sendDroneCommand('land')">
+            Посадка
+        </button>
+        <button class="control-btn emergency-btn" onclick="confirmEmergencyStop()">
+            Аварийная остановка
+        </button>
+    </div>
+</div>
+
+<script>
+function sendDroneCommand(command) {
+    fetch(`/api/drone/{{ drone.id }}/${command}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message || "Команда выполнена");
+    })
+    .catch(error => {
+        alert("Ошибка: " + error.message);
+    });
+}
+
+function confirmEmergencyStop() {
+    if(confirm("Вы уверены, что хотите выполнить аварийную остановку?")) {
+        sendDroneCommand('emergency');
+    }
+}
+</script>
+{% endblock %}
