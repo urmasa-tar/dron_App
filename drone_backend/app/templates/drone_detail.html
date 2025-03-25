@@ -1,78 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="drone-detail-container status-{{ drone.status }}">
-    <!-- Заголовок -->
-    <div class="drone-header">
-        <a href="{{ url_for('website.index') }}" class="back-link">← Назад к списку</a>
-        <h1>{{ drone.name }}</h1>
-        <span class="status-badge status-{{ drone.status }}">
-            {% if drone.status == 'idle' %}Готов{% elif drone.status == 'busy' %}В работе{% else %}Оффлайн{% endif %}
-        </span>
-    </div>
-
-    <!-- Основная информация -->
+<div class="container drone-detail">
+    <h1>{{ drone.name }} <span class="badge badge-{{ 'success' if drone.status == 'connected' else 'secondary' }}">
+        {{ drone.status }}
+    </span></h1>
+    
     <div class="drone-info">
-        <div class="info-card">
-            <h3>Технические данные</h3>
-            <div class="info-row">
-                <span>ID:</span>
-                <strong>#{{ drone.id }}</strong>
-            </div>
-            <div class="info-row">
-                <span>IP адрес:</span>
-                <strong>{{ drone.ip }}</strong>
-            </div>
-        </div>
-
-        <div class="info-card">
-            <h3>Состояние</h3>
-            <div class="info-row">
-                <span>Батарея:</span>
-                <div class="battery-container">
-                    <div class="battery-level" style="width: {{ drone.get('battery', 0) }}%;"></div>
-                    <span class="battery-value">{{ drone.get('battery', 0) }}%</span>
-                </div>
-            </div>
-            <div class="info-row">
-                <span>Статус:</span>
-                <strong class="status-text">{{ drone.status }}</strong>
-            </div>
-        </div>
+        <p><strong>IP:</strong> {{ drone.ip }}</p>
+        <p><strong>MAVLink порт:</strong> {{ drone.port }}</p>
+        <p><strong>ROS порт:</strong> {{ drone.ros_port }}</p>
+        <p><strong>Добавлен:</strong> {{ drone.added_at }}</p>
     </div>
-
-    <!-- Управление -->
-    <div class="control-panel">
-        <button class="control-btn takeoff-btn" onclick="sendDroneCommand('takeoff')">
-            Взлет
+    
+    <div class="drone-actions">
+        <button class="btn btn-connect" 
+                onclick="connectDrone({{ drone.id }})"
+                {{ 'disabled' if drone.status == 'connected' }}>
+            Подключить
         </button>
-        <button class="control-btn land-btn" onclick="sendDroneCommand('land')">
-            Посадка
-        </button>
-        <button class="control-btn emergency-btn" onclick="confirmEmergencyStop()">
-            Аварийная остановка
-        </button>
+        
+        <a href="/download/launch/{{ drone.name }}" class="btn btn-download">
+            Скачать launch-файл
+        </a>
     </div>
 </div>
 
 <script>
-function sendDroneCommand(command) {
-    fetch(`/api/drone/{{ drone.id }}/${command}`, {
+function connectDrone(droneId) {
+    fetch(`/api/drone/${droneId}/connect`, {
         method: 'POST'
     })
     .then(response => response.json())
     .then(data => {
-        alert(data.message || "Команда выполнена");
-    })
-    .catch(error => {
-        alert("Ошибка: " + error.message);
+        if(data.success) {
+            alert(`Дрон подключен. PID процесса: ${data.pid}`);
+            window.location.reload();
+        } else {
+            alert(`Ошибка: ${data.error}`);
+        }
     });
-}
-
-function confirmEmergencyStop() {
-    if(confirm("Вы уверены, что хотите выполнить аварийную остановку?")) {
-        sendDroneCommand('emergency');
-    }
 }
 </script>
 {% endblock %}
