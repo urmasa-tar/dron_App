@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Дрон: {{ drone.name }}</h2>
+    <p>IP: {{ drone.ip }}</p>
+    <p>Статус: <span class="status-{{ 'online' if drone.is_online else 'offline' }}"></span></p>
+    <button class="ping-btn" data-drone-id="{{ drone.id }}">Проверить соединение</button>
+    <div id="status-message"></div>
+{% endblock %}

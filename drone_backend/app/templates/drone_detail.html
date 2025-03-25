@@ -1,231 +1,208 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container drone-detail">
+<div class="drone-detail-container" data-drone-id="{{ drone.id }}">
+    <!-- Заголовок с кнопкой назад и статусом -->
     <div class="drone-header">
         <a href="{{ url_for('website.index') }}" class="back-link">
-            <i class="fas fa-arrow-left"></i> Назад к списку
+            <i class="fas fa-arrow-left"></i> К списку дронов
         </a>
-        <h1>{{ drone.name }}</h1>
-        <span class="status-badge status-{{ drone.status }}">
-            {% if drone.status == 'connected' %}
-                Подключен
-            {% else %}
-                Отключен
-            {% endif %}
-        </span>
+        <div class="drone-title">
+            <h1>{{ drone.name }}</h1>
+            <div class="drone-status">
+                <span class="status-indicator status-{{ 'online' if drone.is_connected else 'offline' }}"></span>
+                <span>{{ 'Подключен' if drone.is_connected else 'Не подключен' }}</span>
+            </div>
+        </div>
     </div>
 
+    <!-- Основная информация -->
     <div class="drone-info-grid">
         <div class="info-card">
-            <h3><i class="fas fa-info-circle"></i> Информация</h3>
+            <h3><i class="fas fa-info-circle"></i> Основные данные</h3>
             <div class="info-row">
                 <span class="info-label">ID:</span>
                 <span class="info-value">#{{ drone.id }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">FCU URL:</span>
-                <span class="info-value">{{ drone.fcu_url }}</span>
+                <span class="info-label">IP адрес:</span>
+                <span class="info-value">{{ drone.ip }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">System ID:</span>
-                <span class="info-value">{{ drone.system_id }}</span>
+                <span class="info-label">Последняя активность:</span>
+                <span class="info-value">
+                    {% if drone.last_seen %}
+                        {{ drone.last_seen|datetimeformat }}
+                    {% else %}
+                        Никогда
+                    {% endif %}
+                </span>
             </div>
         </div>
 
         <div class="info-card">
-            <h3><i class="fas fa-plug"></i> Подключение</h3>
-            <div class="connection-controls">
-                <button id="connect-btn" class="btn btn-connect" 
-                        data-drone-id="{{ drone.id }}"
-                        {% if drone.status == 'connected' %}disabled{% endif %}>
-                    <i class="fas fa-link"></i> Подключить
-                </button>
-                <button id="disconnect-btn" class="btn btn-disconnect"
-                        data-drone-id="{{ drone.id }}"
-                        {% if drone.status != 'connected' %}disabled{% endif %}>
-                    <i class="fas fa-unlink"></i> Отключить
-                </button>
+            <h3><i class="fas fa-battery-three-quarters"></i> Состояние</h3>
+            <div class="info-row">
+                <span class="info-label">Батарея:</span>
+                <div class="battery-display">
+                    <div class="battery-level" style="width: {{ drone.battery }}%;"></div>
+                    <span class="battery-value">{{ drone.battery }}%</span>
+                </div>
             </div>
-            <div id="connection-status" class="connection-status">
-                {% if drone.status == 'connected' %}
-                    Последнее подключение: {{ drone.added_at }}
-                {% endif %}
+            <div class="info-row">
+                <span class="info-label">Статус в Gazebo:</span>
+                <span class="info-value status-{{ drone.status }}">
+                    {% if drone.status == 'idle' %}Готов к работе{% endif %}
+                    {% if drone.status == 'busy' %}Выполняет задачу{% endif %}
+                    {% if drone.status == 'error' %}Ошибка{% endif %}
+                    {% if drone.status == 'offline' %}Не отвечает{% endif %}
+                </span>
             </div>
         </div>
     </div>
 
-    <div class="drone-actions">
-        <a href="{{ url_for('website.download_launch', drone_name=drone.name) }}" 
-           class="btn btn-download">
-            <i class="fas fa-download"></i> Скачать launch-файл
-        </a>
+    <!-- Управление дроном -->
+    <div class="control-section">
+        <h2><i class="fas fa-gamepad"></i> Управление</h2>
+        
+        <div class="control-grid">
+            <button class="control-btn takeoff-btn" onclick="sendCommand('takeoff')" 
+                    {% if not drone.is_connected %}disabled{% endif %}>
+                <i class="fas fa-rocket"></i> Взлет
+            </button>
+            
+            <button class="control-btn land-btn" onclick="sendCommand('land')" 
+                    {% if not drone.is_connected %}disabled{% endif %}>
+                <i class="fas fa-parachute-box"></i> Посадка
+            </button>
+            
+            <button class="control-btn emergency-btn" onclick="confirmEmergencyStop()" 
+                    {% if not drone.is_connected %}disabled{% endif %}>
+                <i class="fas fa-exclamation-triangle"></i> Аварийная остановка
+            </button>
+        </div>
+    </div>
+
+    <!-- Лог ошибок -->
+    <div class="error-log-section">
+        <h2><i class="fas fa-exclamation-circle"></i> Последние ошибки</h2>
+        <div class="error-log" id="errorLog">
+            {% if drone.is_connected %}
+                <div class="log-entry log-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Подключение активно</span>
+                    <small>{{ now|datetimeformat }}</small>
+                </div>
+            {% else %}
+                <div class="log-entry log-error">
+                    <i class="fas fa-times-circle"></i>
+                    <span>Не удалось подключиться к {{ drone.ip }}</span>
+                    <small>{{ now|datetimeformat }}</small>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
-<div id="alert-container" style="position: fixed; top: 20px; right: 20px;"></div>
+<!-- Модальное окно подтверждения -->
+<div id="confirmModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Подтверждение действия</h3>
+        <p id="modalMessage">Вы уверены, что хотите выполнить это действие?</p>
+        <div class="modal-actions">
+            <button id="confirmAction" class="btn btn-danger">Подтвердить</button>
+            <button onclick="closeModal()" class="btn btn-secondary">Отмена</button>
+        </div>
+    </div>
+</div>
 
 <script>
-// Используем делегирование событий вместо inline onclick
-document.addEventListener('DOMContentLoaded', function() {
-    // Обработчик для кнопки подключения
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('#connect-btn')) {
-            const btn = e.target.closest('#connect-btn');
-            const droneId = btn.dataset.droneId;
-            connectDrone(droneId);
+// Текущий ID дрона
+const droneId = {{ drone.id }};
+
+// Отправка команд на сервер
+function sendCommand(command) {
+    const btn = event.target;
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
+
+    fetch(`/api/drone/${droneId}/${command}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            showAlert(`Команда "${command}" выполнена`, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(data.error || 'Ошибка выполнения команды', 'error');
+            addErrorLog(data.error || `Ошибка команды ${command}`);
         }
-        
-        if (e.target.closest('#disconnect-btn')) {
-            const btn = e.target.closest('#disconnect-btn');
-            const droneId = btn.dataset.droneId;
-            disconnectDrone(droneId);
-        }
+    })
+    .catch(error => {
+        showAlert('Ошибка сети: ' + error.message, 'error');
+        addErrorLog(`Сетевая ошибка: ${error.message}`);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     });
-});
-
-// Функция подключения дрона
-async function connectDrone(droneId) {
-    const btn = document.getElementById('connect-btn');
-    const statusDiv = document.getElementById('connection-status');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Подключение...';
-
-    try {
-        const response = await fetch(`/drone/${droneId}/connect`, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Ошибка сервера');
-        }
-
-        showAlert(`Успешно подключено к дрону. PID: ${data.pid}`, 'success');
-        setTimeout(() => window.location.reload(), 1000);
-    } catch (error) {
-        console.error('Ошибка подключения:', error);
-        showAlert(error.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-link"></i> Подключить';
-    }
 }
 
-// Функция отключения дрона
-async function disconnectDrone(droneId) {
-    const btn = document.getElementById('disconnect-btn');
+// Подтверждение критических команд
+function confirmEmergencyStop() {
+    document.getElementById('modalTitle').textContent = 'Аварийная остановка';
+    document.getElementById('modalMessage').textContent = 
+        'Вы уверены, что хотите выполнить аварийную остановку дрона? Это действие невозможно отменить!';
     
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отключение...';
-
-    try {
-        const response = await fetch(`/drone/${droneId}/disconnect`, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Ошибка сервера');
-        }
-
-        showAlert('Дрон успешно отключен', 'success');
-        setTimeout(() => window.location.reload(), 1000);
-    } catch (error) {
-        console.error('Ошибка отключения:', error);
-        showAlert(error.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-unlink"></i> Отключить';
-    }
+    const confirmBtn = document.getElementById('confirmAction');
+    confirmBtn.onclick = function() {
+        closeModal();
+        sendCommand('emergency');
+    };
+    
+    document.getElementById('confirmModal').style.display = 'flex';
 }
 
-// Функция показа уведомлений
+// Закрытие модального окна
+function closeModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+}
+
+// Добавление записи в лог ошибок
+function addErrorLog(message) {
+    const logEntry = document.createElement('div');
+    logEntry.className = 'log-entry log-error';
+    logEntry.innerHTML = `
+        <i class="fas fa-times-circle"></i>
+        <span>${message}</span>
+        <small>${new Date().toLocaleTimeString()}</small>
+    `;
+    document.getElementById('errorLog').prepend(logEntry);
+}
+
+// Показ уведомлений
 function showAlert(message, type) {
-    const container = document.getElementById('alert-container');
     const alert = document.createElement('div');
-    
     alert.className = `alert alert-${type}`;
     alert.innerHTML = `
-        <div class="alert-icon">
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-        </div>
-        <div class="alert-message">${message}</div>
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        ${message}
     `;
-    
-    container.appendChild(alert);
-    
-    setTimeout(() => {
-        alert.style.opacity = '0';
-        setTimeout(() => alert.remove(), 300);
-    }, 3000);
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 3000);
 }
+
+// Автообновление статуса каждые 10 секунд
+setInterval(() => {
+    fetch(`/api/drone/${droneId}/status`)
+    .then(response => response.json())
+    .then(data => {
+        if(data.status !== '{{ drone.status }}' || data.battery !== {{ drone.battery }}) {
+            location.reload();
+        }
+    });
+}, 10000);
 </script>
-
-<style>
-.alert {
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    color: white;
-    display: flex;
-    align-items: center;
-    transition: opacity 0.3s;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.alert-success {
-    background-color: #4CAF50;
-}
-
-.alert-error {
-    background-color: #F44336;
-}
-
-.alert-icon {
-    margin-right: 10px;
-    font-size: 20px;
-}
-
-.alert-message {
-    flex-grow: 1;
-}
-
-.btn-connect {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.btn-disconnect {
-    background-color: #F44336;
-    color: white;
-}
-
-.status-badge {
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 14px;
-}
-
-.status-connected {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.status-disconnected {
-    background-color: #9E9E9E;
-    color: white;
-}
-</style>
 {% endblock %}

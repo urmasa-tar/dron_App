@@ -1,25 +1,46 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h2>Добавить новый дрон</h2>
-    <form method="POST" class="drone-form">
+<div class="form-container">
+    <h1>Добавление нового дрона</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" onsubmit="return validateForm()">
         <div class="form-group">
-            <label for="name">Имя дрона:</label>
-            <input type="text" id="name" name="name" required 
-                   pattern="[a-zA-Z0-9_-]+" title="Только латинские буквы, цифры и _-"
-                   class="form-control">
+            <label for="name">Название дрона*</label>
+            <input type="text" id="name" name="name" required class="form-control">
         </div>
         
         <div class="form-group">
-            <label for="ip_address">IP адрес дрона:</label>
-            <input type="text" id="ip_address" name="ip_address" required
-                   placeholder="Например: 192.168.1.10"
-                   class="form-control">
-            <small class="form-text">IP адрес должен быть уникальным для каждого дрона в GazeboSim</small>
+            <label for="ip">IP адрес (Gazebo)*</label>
+            <input type="text" id="ip" name="ip" placeholder="192.168.1.100" required class="form-control">
+            <small class="form-text">Укажите IP, который использует дрон в Gazebo</small>
         </div>
         
-        <button type="submit" class="btn btn-primary">Добавить дрон</button>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Добавить дрон</button>
+            <a href="{{ url_for('website.index') }}" class="btn btn-secondary">Отмена</a>
+        </div>
     </form>
 </div>
+
+<script>
+function validateForm() {
+    const ip = document.getElementById('ip').value;
+    if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+        alert('Введите корректный IP адрес');
+        return false;
+    }
+    return true;
+}
+</script>
 {% endblock %}

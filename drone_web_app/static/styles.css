@@ -1,0 +1,27 @@
+.status-online {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: green;
+    border-radius: 50%;
+}
+
+.status-offline {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+}
+
+.drone-list li {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    list-style: none;
+}
+
+.drone-list li a {
+    text-decoration: none;
+    color: #333;
+}

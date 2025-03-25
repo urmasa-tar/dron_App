@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Список дронов</h2>
+    <ul class="drone-list">
+        {% for drone in drones %}
+            <li>
+                <a href="{{ url_for('drone_page', drone_id=drone.id) }}">
+                    {{ drone.name }} ({{ drone.ip }})
+                    <span class="status-{{ 'online' if drone.is_online else 'offline' }}"></span>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

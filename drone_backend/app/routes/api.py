@@ -1,29 +1,18 @@
-import subprocess
 from flask import jsonify
+from app.drone_manager import DroneManager
+from app.routes import bp  # Импортируем bp из __init__.py
 
-@bp.route('/api/drone/<int:drone_id>/connect', methods=['POST'])
-def connect_drone(drone_id):
-    drone = next((d for d in drones if d['id'] == drone_id), None)
+@bp.route('/api/drone/<int:drone_id>/<command>', methods=['POST'])
+def send_command(drone_id, command):
+    drone = DroneManager.update_drone_status(drone_id)
     if not drone:
-        return jsonify({"error": "Drone not found"}), 404
+        return jsonify({'error': 'Drone not found'}), 404
     
     try:
-        # Запускаем ROS launch файл
-        launch_file = f"launch_files/{drone['name']}.launch"
-        process = subprocess.Popen(
-            ["roslaunch", launch_file],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        
-        # Обновляем статус дрона
-        drone['status'] = 'connected'
-        drone['ros_pid'] = process.pid
-        
+        # Здесь будет реальная команда к Gazebo API
         return jsonify({
-            "success": True,
-            "message": f"Launch file executed for {drone['name']}",
-            "pid": process.pid
+            'success': True,
+            'message': f'Command {command} sent to drone {drone_id}'
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500

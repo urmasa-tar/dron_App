@@ -1,15 +1,21 @@
 from flask import Flask
-from config import Config
+from datetime import datetime
 
-def create_app(config_class=Config):
+def create_app():
     app = Flask(__name__)
-    app.config.from_object(config_class)
+    app.secret_key = 'your-secret-key-here'
     
-    # Создаем папку для launch-файлов
-    import os
-    os.makedirs('launch_files', exist_ok=True)
+    # Регистрируем Blueprint
+    from app.routes import bp
+    app.register_blueprint(bp)
     
-    from app.routes.website import bp as website_bp
-    app.register_blueprint(website_bp)
+    # Добавляем фильтр для дат
+    @app.template_filter('datetimeformat')
+    def datetimeformat(value, format='%d.%m.%Y %H:%M'):
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return datetime.fromisoformat(value).strftime(format)
+        return value.strftime(format)
     
     return app

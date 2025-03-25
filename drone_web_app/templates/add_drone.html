@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Добавить новый дрон</h2>
+    <form method="POST">
+        <label for="name">Имя дрона:</label>
+        <input type="text" id="name" name="name" required>
+        
+        <label for="ip">IP-адрес:</label>
+        <input type="text" id="ip" name="ip" required>
+        
+        <button type="submit">Добавить</button>
+    </form>
+{% endblock %}

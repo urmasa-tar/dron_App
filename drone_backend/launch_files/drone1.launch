@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <!-- MAVROS node for drone1 -->
-    <node pkg="mavros" type="mavros_node" name="mavros_1" output="screen">
-        <param name="fcu_url" value="udp://@192.168.1.10:14550" />
-        <param name="target_system_id" value="1" />
-        <param name="fcu_protocol" value="v2.0" />
-    </node>
-</launch>
