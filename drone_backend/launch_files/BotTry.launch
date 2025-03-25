@@ -3,12 +3,12 @@
     <!-- MAVROS node for BotTry -->
     <group ns="BotTry">
         <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true">
-            <param name="fcu_url" value="udp://:14550@192.166.1.1:14551" />
+            <param name="fcu_url" value="udp://@127.0.0.1:14580" />
             <param name="gcs_url" value="" />
             <param name="target_system_id" value="1" />
             <param name="fcu_protocol" value="v2.0" />
             
-            <!-- Parameters for Clover -->
+            <!-- Standard parameters -->
             <param name="tgt_system" value="1" />
             <param name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
             <param name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />

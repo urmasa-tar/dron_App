@@ -7,38 +7,39 @@
     </span></h1>
     
     <div class="drone-info">
-        <p><strong>IP:</strong> {{ drone.ip }}</p>
-        <p><strong>MAVLink порт:</strong> {{ drone.port }}</p>
-        <p><strong>ROS порт:</strong> {{ drone.ros_port }}</p>
-        <p><strong>Добавлен:</strong> {{ drone.added_at }}</p>
-    </div>
-    
-    <div class="drone-actions">
-        <button class="btn btn-connect" 
-                onclick="connectDrone({{ drone.id }})"
-                {{ 'disabled' if drone.status == 'connected' }}>
-            Подключить
-        </button>
+        <div class="info-card">
+            <h3>Подключение</h3>
+            <p><strong>FCU URL:</strong> {{ drone.fcu_url }}</p>
+            <p><strong>Node name:</strong> {{ drone.node_name }}</p>
+            <p><strong>System ID:</strong> {{ drone.system_id }}</p>
+        </div>
         
-        <a href="/download/launch/{{ drone.name }}" class="btn btn-download">
-            Скачать launch-файл
-        </a>
+        <div class="info-card">
+            <h3>Управление</h3>
+            <button class="btn btn-connect" 
+                    onclick="connectDrone({{ drone.id }})"
+                    {{ 'disabled' if drone.status == 'connected' }}>
+                Подключить
+            </button>
+            <a href="/download/launch/{{ drone.name }}" class="btn btn-download">
+                Скачать launch-файл
+            </a>
+        </div>
     </div>
 </div>
 
 <script>
 function connectDrone(droneId) {
-    fetch(`/api/drone/${droneId}/connect`, {
+    fetch(`/drone/${droneId}/connect`, {
         method: 'POST'
     })
-    .then(response => response.json())
+    .then(response => response.text())
     .then(data => {
-        if(data.success) {
-            alert(`Дрон подключен. PID процесса: ${data.pid}`);
-            window.location.reload();
-        } else {
-            alert(`Ошибка: ${data.error}`);
-        }
+        alert(data);
+        window.location.reload();
+    })
+    .catch(error => {
+        alert('Ошибка подключения: ' + error);
     });
 }
 </script>

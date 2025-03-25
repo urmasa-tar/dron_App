@@ -6,28 +6,20 @@
     <form method="POST" class="drone-form">
         <div class="form-group">
             <label for="name">Имя дрона:</label>
-            <input type="text" id="name" name="name" required class="form-control">
+            <input type="text" id="name" name="name" required 
+                   pattern="[a-zA-Z0-9_-]+" 
+                   class="form-control">
         </div>
         
         <div class="form-group">
-            <label for="ip">IP адрес:</label>
-            <input type="text" id="ip" name="ip" required class="form-control" 
-                   placeholder="Например: 192.168.1.10 или 127.0.0.1">
+            <label for="fcu_url">FCU URL (обязательно):</label>
+            <input type="text" id="fcu_url" name="fcu_url" required
+                   placeholder="udp://@127.0.0.1:14580"
+                   class="form-control">
+            <small class="form-text">Пример: udp://@192.168.1.10:14550</small>
         </div>
         
-        <div class="form-row">
-            <div class="form-group">
-                <label for="port">MAVLink порт:</label>
-                <input type="number" id="port" name="port" value="14550" class="form-control">
-            </div>
-            
-            <div class="form-group">
-                <label for="ros_port">ROS порт:</label>
-                <input type="number" id="ros_port" name="ros_port" value="11311" class="form-control">
-            </div>
-        </div>
-        
-        <button type="submit" class="btn btn-primary">Сохранить и сгенерировать launch-файл</button>
+        <button type="submit" class="btn btn-primary">Добавить дрон</button>
     </form>
 </div>
 {% endblock %}

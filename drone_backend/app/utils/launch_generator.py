@@ -4,19 +4,11 @@ import os
 LAUNCH_TEMPLATE = """<?xml version="1.0"?>
 <launch>
     <!-- MAVROS node for {{ drone.name }} -->
-    <group ns="{{ drone.name }}">
-        <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true">
-            <param name="fcu_url" value="udp://:{{ drone.port }}@{{ drone.ip }}:{{ drone.port|int + 1 }}" />
-            <param name="gcs_url" value="" />
-            <param name="target_system_id" value="{{ drone.id }}" />
-            <param name="fcu_protocol" value="v2.0" />
-            
-            <!-- Parameters for Clover -->
-            <param name="tgt_system" value="{{ drone.id }}" />
-            <param name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
-            <param name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />
-        </node>
-    </group>
+    <node pkg="mavros" type="mavros_node" name="{{ drone.node_name }}" output="screen">
+        <param name="fcu_url" value="{{ drone.fcu_url }}" />
+        <param name="target_system_id" value="{{ drone.system_id }}" />
+        <param name="fcu_protocol" value="v2.0" />
+    </node>
 </launch>
 """
 
