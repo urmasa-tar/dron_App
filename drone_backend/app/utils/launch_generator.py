@@ -1,7 +1,8 @@
 from jinja2 import Template
 import os
 
-LAUNCH_TEMPLATE = """<launch>
+LAUNCH_TEMPLATE = """<?xml version="1.0"?>
+<launch>
     <!-- MAVROS node for {{ drone.name }} -->
     <group ns="{{ drone.name }}">
         <node pkg="mavros" type="mavros_node" name="mavros" required="true" clear_params="true">
@@ -10,7 +11,7 @@ LAUNCH_TEMPLATE = """<launch>
             <param name="target_system_id" value="{{ drone.id }}" />
             <param name="fcu_protocol" value="v2.0" />
             
-            <!-- Параметры для Clover (если используется) -->
+            <!-- Parameters for Clover -->
             <param name="tgt_system" value="{{ drone.id }}" />
             <param name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
             <param name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />
@@ -24,5 +25,5 @@ def generate_launch_file(drone):
     content = template.render(drone=drone)
     
     os.makedirs('launch_files', exist_ok=True)
-    with open(f'launch_files/{drone["name"]}.launch', 'w') as f:
+    with open(f'launch_files/{drone["name"]}.launch', 'w', encoding='utf-8') as f:
         f.write(content)
