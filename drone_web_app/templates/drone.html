@@ -1,9 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Дрон: {{ drone.name }}</h2>
-    <p>IP: {{ drone.ip }}</p>
-    <p>Статус: <span class="status-{{ 'online' if drone.is_online else 'offline' }}"></span></p>
-    <button class="ping-btn" data-drone-id="{{ drone.id }}">Проверить соединение</button>
-    <div id="status-message"></div>
+    <div class="drone-details">
+        <h2>Дрон: {{ drone.name }}</h2>
+        <div class="drone-info">
+            <p><strong>IP-адрес:</strong> {{ drone.ip }}</p>
+            <p><strong>Статус:</strong> 
+                <span class="status-indicator status-{{ 'online' if drone.is_online else 'offline' }}"></span>
+                {{ 'Online' if drone.is_online else 'Offline' }}
+            </p>
+            <p><strong>ID:</strong> {{ drone.id }}</p>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-button" onclick="loadCode('navigation')">
+                <i class="fas fa-map-marked-alt"></i> Навигация
+            </button>
+            <button class="action-button button-secondary" onclick="loadCode('monitoring')">
+                <i class="fas fa-chart-line"></i> Мониторинг
+            </button>
+            <button class="action-button button-danger" onclick="loadCode('emergency')">
+                <i class="fas fa-exclamation-triangle"></i> Аварийный
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function loadCode(type) {
+            alert(`Загрузка кода ${type} для дрона {{ drone.name }}`);
+        }
+    </script>
 {% endblock %}

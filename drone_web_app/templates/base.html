@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drone Control Panel</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <header>
         <h1>Drone Control Panel</h1>
         <nav>
-            <a href="{{ url_for('index') }}">Главная</a>
-            <a href="{{ url_for('add_drone') }}">Добавить дрон</a>
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Главная</a>
+            <a href="{{ url_for('add_drone') }}"><i class="fas fa-plus-circle"></i> Добавить дрон</a>
         </nav>
     </header>
     <main>

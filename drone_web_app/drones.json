@@ -4,5 +4,17 @@
         "name": "BotTry",
         "ip": "192.349.13.00",
         "is_online": false
+    },
+    {
+        "id": 2,
+        "name": "BotTry02",
+        "ip": "192.243.45.60",
+        "is_online": false
+    },
+    {
+        "id": 3,
+        "name": "MovementReg",
+        "ip": "192.349.13.01",
+        "is_online": false
     }
 ]

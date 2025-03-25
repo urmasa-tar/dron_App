@@ -2,14 +2,20 @@
 
 {% block content %}
     <h2>Список дронов</h2>
-    <ul class="drone-list">
+    <div class="drone-grid">
         {% for drone in drones %}
-            <li>
-                <a href="{{ url_for('drone_page', drone_id=drone.id) }}">
-                    {{ drone.name }} ({{ drone.ip }})
-                    <span class="status-{{ 'online' if drone.is_online else 'offline' }}"></span>
-                </a>
-            </li>
+            <a href="{{ url_for('drone_page', drone_id=drone.id) }}" class="drone-card">
+                <div class="drone-content">
+                    <h3 class="drone-name">{{ drone.name }}</h3>
+                    <p class="drone-ip">{{ drone.ip }}</p>
+                    <div class="drone-status">
+                        <span class="status-indicator status-{{ 'online' if drone.is_online else 'offline' }}"></span>
+                        <span class="status-text">
+                            {{ 'Online' if drone.is_online else 'Offline' }}
+                        </span>
+                    </div>
+                </div>
+            </a>
         {% endfor %}
-    </ul>
+    </div>
 {% endblock %}

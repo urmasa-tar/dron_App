@@ -1,27 +1,495 @@
-.status-online {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    background-color: green;
+/* Общие стили */
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3f37c9;
+    --accent-color: #4cc9f0;
+    --background-color: #f8f9fa;
+    --card-color: #ffffff;
+    --text-color: #2b2d42;
+    --text-light: #8d99ae;
+    --success-color: #4caf50;
+    --error-color: #f44336;
+    --border-radius: 12px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --box-shadow-hover: 0 10px 20px rgba(0, 0, 0, 0.15);
+    --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+  }
+  
+  /* Шапка */
+  header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 1.5rem 2rem;
+    box-shadow: var(--box-shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+  
+  nav {
+    display: flex;
+    gap: 1.5rem;
+  }
+  
+  nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.3rem 0;
+    position: relative;
+    transition: var(--transition);
+  }
+  
+  nav a:hover {
+    color: var(--accent-color);
+  }
+  
+  nav a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--accent-color);
+    transition: var(--transition);
+  }
+  
+  nav a:hover::after {
+    width: 100%;
+  }
+  
+  /* Основной контент */
+  main {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  
+  /* Список дронов */
+  .drone-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    list-style: none;
+  }
+  
+  .drone-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    border-left: 4px solid var(--primary-color);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .drone-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(76, 201, 240, 0.05));
+    opacity: 0;
+    transition: var(--transition);
+  }
+  
+  .drone-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--box-shadow-hover);
+  }
+  
+  .drone-card:hover::before {
+    opacity: 1;
+  }
+  
+  .drone-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .drone-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+    transition: var(--transition);
+  }
+  
+  .drone-card:hover .drone-name {
+    color: var(--secondary-color);
+  }
+  
+  .drone-ip {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  
+  .drone-status {
+    display: flex;
+    align-items: center;
+    margin-top: auto;
+  }
+  
+  .status-indicator {
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
+    margin-right: 0.5rem;
+    transition: var(--transition);
+  }
+  
+  .status-online {
+    background-color: var(--success-color);
+    box-shadow: 0 0 8px var(--success-color);
+  }
+  
+  .status-offline {
+    background-color: var(--error-color);
+  }
+  
+  .status-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  /* Страница дрона */
+  .drone-details {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--box-shadow);
+    margin-top: 1.5rem;
+  }
+  
+  .drone-info {
+    margin-bottom: 2rem;
+  }
+  
+  .drone-info p {
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+  }
+  
+  .drone-info strong {
+    color: var(--primary-color);
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+  
+  .action-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .action-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+  }
+  
+  .action-button:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .action-button:active::after {
+    animation: ripple 0.6s ease-out;
+  }
+  
+  @keyframes ripple {
+    0% {
+      transform: scale(0, 0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(20, 20);
+      opacity: 0;
+    }
+  }
+  
+  .action-button i {
+    font-size: 1rem;
+  }
+  
+  .button-secondary {
+    background-color: #f0f0f0;
+    color: var(--text-color);
+  }
+  
+  .button-secondary:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .button-danger {
+    background-color: var(--error-color);
+  }
+  
+  .button-danger:hover {
+    background-color: #d32f2f;
+  }
+  
+  /* Форма добавления дрона */
+  .add-form {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--box-shadow);
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+  
+  .form-group input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+  }
+  
+  /* Анимации */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .drone-card {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  
+  .drone-card:nth-child(1) { animation-delay: 0.1s; }
+  .drone-card:nth-child(2) { animation-delay: 0.2s; }
+  .drone-card:nth-child(3) { animation-delay: 0.3s; }
+  
+  /* Эффект пульсации для статуса */
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+  }
+  
+  .status-online {
+    animation: pulse 2s infinite;
+  }
+
+  /* ... (предыдущие стили остаются без изменений) ... */
+
+/* Список дронов */
+.drone-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    list-style: none;
+  }
+  
+  .drone-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    border-left: 4px solid var(--primary-color);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer; /* Добавляем указатель при наведении */
+  }
+  
+  .drone-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+  
+  .drone-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* ... (остальные стили остаются без изменений) ... */
+  /* Общие стили для карточек дронов */
+.drone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    list-style: none;
+    padding: 0;
+}
+
+.drone-card {
+    display: block;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    border-left: 4px solid var(--primary-color);
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+}
+
+.drone-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--box-shadow-hover);
+    border-left-color: var(--secondary-color);
+}
+
+.drone-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.drone-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+    transition: var(--transition);
+}
+
+.drone-card:hover .drone-name {
+    color: var(--secondary-color);
+}
+
+.drone-ip {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.drone-status {
+    display: flex;
+    align-items: center;
+    margin-top: auto;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    transition: var(--transition);
+}
+
+.status-online {
+    background-color: var(--success-color);
+    box-shadow: 0 0 8px var(--success-color);
+    animation: pulse 2s infinite;
 }
 
 .status-offline {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    background-color: red;
-    border-radius: 50%;
+    background-color: var(--error-color);
 }
 
-.drone-list li {
-    margin: 10px 0;
-    padding: 10px;
-    border: 1px solid #ccc;
-    list-style: none;
+.status-text {
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 
-.drone-list li a {
-    text-decoration: none;
-    color: #333;
+/* Анимация для карточек */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.drone-card {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.drone-card:nth-child(1) { animation-delay: 0.1s; }
+.drone-card:nth-child(2) { animation-delay: 0.2s; }
+.drone-card:nth-child(3) { animation-delay: 0.3s; }
+
+/* Эффект пульсации для статуса */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
 }
