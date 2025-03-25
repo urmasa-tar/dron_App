@@ -7,16 +7,16 @@
         <div class="form-group">
             <label for="name">Имя дрона:</label>
             <input type="text" id="name" name="name" required 
-                   pattern="[a-zA-Z0-9_-]+" 
+                   pattern="[a-zA-Z0-9_-]+" title="Только латинские буквы, цифры и _-"
                    class="form-control">
         </div>
         
         <div class="form-group">
-            <label for="fcu_url">FCU URL (обязательно):</label>
-            <input type="text" id="fcu_url" name="fcu_url" required
-                   placeholder="udp://@127.0.0.1:14580"
+            <label for="ip_address">IP адрес дрона:</label>
+            <input type="text" id="ip_address" name="ip_address" required
+                   placeholder="Например: 192.168.1.10"
                    class="form-control">
-            <small class="form-text">Пример: udp://@192.168.1.10:14550</small>
+            <small class="form-text">IP адрес должен быть уникальным для каждого дрона в GazeboSim</small>
         </div>
         
         <button type="submit" class="btn btn-primary">Добавить дрон</button>

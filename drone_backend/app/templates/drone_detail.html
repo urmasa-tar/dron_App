@@ -2,45 +2,230 @@
 
 {% block content %}
 <div class="container drone-detail">
-    <h1>{{ drone.name }} <span class="badge badge-{{ 'success' if drone.status == 'connected' else 'secondary' }}">
-        {{ drone.status }}
-    </span></h1>
-    
-    <div class="drone-info">
+    <div class="drone-header">
+        <a href="{{ url_for('website.index') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Назад к списку
+        </a>
+        <h1>{{ drone.name }}</h1>
+        <span class="status-badge status-{{ drone.status }}">
+            {% if drone.status == 'connected' %}
+                Подключен
+            {% else %}
+                Отключен
+            {% endif %}
+        </span>
+    </div>
+
+    <div class="drone-info-grid">
         <div class="info-card">
-            <h3>Подключение</h3>
-            <p><strong>FCU URL:</strong> {{ drone.fcu_url }}</p>
-            <p><strong>Node name:</strong> {{ drone.node_name }}</p>
-            <p><strong>System ID:</strong> {{ drone.system_id }}</p>
+            <h3><i class="fas fa-info-circle"></i> Информация</h3>
+            <div class="info-row">
+                <span class="info-label">ID:</span>
+                <span class="info-value">#{{ drone.id }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">FCU URL:</span>
+                <span class="info-value">{{ drone.fcu_url }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">System ID:</span>
+                <span class="info-value">{{ drone.system_id }}</span>
+            </div>
         </div>
-        
+
         <div class="info-card">
-            <h3>Управление</h3>
-            <button class="btn btn-connect" 
-                    onclick="connectDrone({{ drone.id }})"
-                    {{ 'disabled' if drone.status == 'connected' }}>
-                Подключить
-            </button>
-            <a href="/download/launch/{{ drone.name }}" class="btn btn-download">
-                Скачать launch-файл
-            </a>
+            <h3><i class="fas fa-plug"></i> Подключение</h3>
+            <div class="connection-controls">
+                <button id="connect-btn" class="btn btn-connect" 
+                        data-drone-id="{{ drone.id }}"
+                        {% if drone.status == 'connected' %}disabled{% endif %}>
+                    <i class="fas fa-link"></i> Подключить
+                </button>
+                <button id="disconnect-btn" class="btn btn-disconnect"
+                        data-drone-id="{{ drone.id }}"
+                        {% if drone.status != 'connected' %}disabled{% endif %}>
+                    <i class="fas fa-unlink"></i> Отключить
+                </button>
+            </div>
+            <div id="connection-status" class="connection-status">
+                {% if drone.status == 'connected' %}
+                    Последнее подключение: {{ drone.added_at }}
+                {% endif %}
+            </div>
         </div>
+    </div>
+
+    <div class="drone-actions">
+        <a href="{{ url_for('website.download_launch', drone_name=drone.name) }}" 
+           class="btn btn-download">
+            <i class="fas fa-download"></i> Скачать launch-файл
+        </a>
     </div>
 </div>
 
+<div id="alert-container" style="position: fixed; top: 20px; right: 20px;"></div>
+
 <script>
-function connectDrone(droneId) {
-    fetch(`/drone/${droneId}/connect`, {
-        method: 'POST'
-    })
-    .then(response => response.text())
-    .then(data => {
-        alert(data);
-        window.location.reload();
-    })
-    .catch(error => {
-        alert('Ошибка подключения: ' + error);
+// Используем делегирование событий вместо inline onclick
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для кнопки подключения
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#connect-btn')) {
+            const btn = e.target.closest('#connect-btn');
+            const droneId = btn.dataset.droneId;
+            connectDrone(droneId);
+        }
+        
+        if (e.target.closest('#disconnect-btn')) {
+            const btn = e.target.closest('#disconnect-btn');
+            const droneId = btn.dataset.droneId;
+            disconnectDrone(droneId);
+        }
     });
+});
+
+// Функция подключения дрона
+async function connectDrone(droneId) {
+    const btn = document.getElementById('connect-btn');
+    const statusDiv = document.getElementById('connection-status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Подключение...';
+
+    try {
+        const response = await fetch(`/drone/${droneId}/connect`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Ошибка сервера');
+        }
+
+        showAlert(`Успешно подключено к дрону. PID: ${data.pid}`, 'success');
+        setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+        console.error('Ошибка подключения:', error);
+        showAlert(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-link"></i> Подключить';
+    }
+}
+
+// Функция отключения дрона
+async function disconnectDrone(droneId) {
+    const btn = document.getElementById('disconnect-btn');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отключение...';
+
+    try {
+        const response = await fetch(`/drone/${droneId}/disconnect`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Ошибка сервера');
+        }
+
+        showAlert('Дрон успешно отключен', 'success');
+        setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+        console.error('Ошибка отключения:', error);
+        showAlert(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-unlink"></i> Отключить';
+    }
+}
+
+// Функция показа уведомлений
+function showAlert(message, type) {
+    const container = document.getElementById('alert-container');
+    const alert = document.createElement('div');
+    
+    alert.className = `alert alert-${type}`;
+    alert.innerHTML = `
+        <div class="alert-icon">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        </div>
+        <div class="alert-message">${message}</div>
+    `;
+    
+    container.appendChild(alert);
+    
+    setTimeout(() => {
+        alert.style.opacity = '0';
+        setTimeout(() => alert.remove(), 300);
+    }, 3000);
 }
 </script>
+
+<style>
+.alert {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    align-items: center;
+    transition: opacity 0.3s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #4CAF50;
+}
+
+.alert-error {
+    background-color: #F44336;
+}
+
+.alert-icon {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.alert-message {
+    flex-grow: 1;
+}
+
+.btn-connect {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn-disconnect {
+    background-color: #F44336;
+    color: white;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+.status-connected {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status-disconnected {
+    background-color: #9E9E9E;
+    color: white;
+}
+</style>
 {% endblock %}

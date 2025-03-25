@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, abort
+from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, jsonify, abort
 from datetime import datetime
 import os
 import subprocess
@@ -12,30 +12,43 @@ drones = []
 
 @bp.route('/')
 def index():
-    """Главная страница со списком дронов"""
+    """Главная страница со списком всех дронов"""
     return render_template('index.html', drones=drones)
 
 @bp.route('/add_drone', methods=['GET', 'POST'])
 def add_drone():
-    """Страница добавления нового дрона"""
+    """Добавление нового дрона"""
     if request.method == 'POST':
         # Валидация данных
-        if not request.form.get('name') or not request.form.get('fcu_url'):
-            abort(400, description="Необходимо указать имя дрона и FCU URL")
+        name = request.form.get('name', '').strip()
+        ip_address = request.form.get('ip_address', '').strip()
         
+        if not name or not ip_address:
+            abort(400, description="Необходимо указать имя и IP-адрес дрона")
+            
+        # Проверка уникальности IP
+        if any(d['ip_address'] == ip_address for d in drones):
+            abort(400, description="Дрон с таким IP-адресом уже существует")
+            
+        # Создание записи о дроне
         drone_data = {
             'id': len(drones) + 1,
-            'name': request.form['name'],
-            'fcu_url': request.form['fcu_url'],
+            'name': name,
+            'ip_address': ip_address,
             'node_name': f"mavros_{len(drones) + 1}",
             'system_id': len(drones) + 1,
             'status': 'disconnected',
-            'added_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            'added_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'process_id': None
         }
         
-        drones.append(drone_data)
-        generate_launch_file(drone_data)
-        return redirect(url_for('website.index'))
+        # Генерация launch-файла
+        try:
+            generate_launch_file(drone_data)
+            drones.append(drone_data)
+            return redirect(url_for('website.index'))
+        except Exception as e:
+            abort(500, description=f"Ошибка при создании конфигурации: {str(e)}")
     
     return render_template('add_drone.html')
 
@@ -49,14 +62,24 @@ def drone_detail(drone_id):
 
 @bp.route('/drone/<int:drone_id>/connect', methods=['POST'])
 def connect_drone(drone_id):
-    """API endpoint для подключения к дрону"""
+    """Подключение к дрону через MAVROS"""
     drone = next((d for d in drones if d['id'] == drone_id), None)
     if not drone:
         abort(404, description="Дрон не найден")
     
+    # Проверяем, не подключен ли уже дрон
+    if drone['status'] == 'connected':
+        return jsonify({
+            "status": "error",
+            "message": "Дрон уже подключен"
+        }), 400
+    
+    launch_file = f"launch_files/{drone['name']}.launch"
+    if not os.path.exists(launch_file):
+        generate_launch_file(drone)
+    
     try:
-        # Запускаем launch-файл в отдельном процессе
-        launch_file = f"launch_files/{drone['name']}.launch"
+        # Запускаем launch-файл
         process = subprocess.Popen(
             ["roslaunch", launch_file],
             stdout=subprocess.PIPE,
@@ -64,22 +87,71 @@ def connect_drone(drone_id):
             text=True
         )
         
-        # Обновляем статус дрона
+        # Даем время на инициализацию
+        try:
+            process.wait(timeout=2)
+            if process.returncode != 0:
+                raise subprocess.CalledProcessError(process.returncode, "roslaunch")
+        except subprocess.TimeoutExpired:
+            # Процесс работает в фоне - это нормально
+            pass
+            
         drone['status'] = 'connected'
         drone['process_id'] = process.pid
         
-        return {
+        return jsonify({
             "status": "success",
-            "message": f"Дрон {drone['name']} подключен",
-            "pid": process.pid,
-            "fcu_url": drone['fcu_url']
-        }, 200
+            "message": f"Дрон {drone['name']} ({drone['ip_address']}) подключен",
+            "pid": process.pid
+        })
         
+    except subprocess.CalledProcessError as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Ошибка запуска: {e.stderr}"
+        }), 500
     except Exception as e:
-        return {
+        return jsonify({
             "status": "error",
             "message": str(e)
-        }, 500
+        }), 500
+
+@bp.route('/drone/<int:drone_id>/disconnect', methods=['POST'])
+def disconnect_drone(drone_id):
+    """Отключение дрона"""
+    drone = next((d for d in drones if d['id'] == drone_id), None)
+    if not drone:
+        abort(404, description="Дрон не найден")
+    
+    if drone['status'] != 'connected' or not drone.get('process_id'):
+        return jsonify({
+            "status": "error",
+            "message": "Дрон не был подключен"
+        }), 400
+    
+    try:
+        # Завершаем процесс
+        os.kill(drone['process_id'], 9)
+        drone['status'] = 'disconnected'
+        drone['process_id'] = None
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Дрон {drone['name']} отключен"
+        })
+    except ProcessLookupError:
+        # Процесс уже завершен
+        drone['status'] = 'disconnected'
+        drone['process_id'] = None
+        return jsonify({
+            "status": "success",
+            "message": "Соединение уже было разорвано"
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 @bp.route('/download/launch/<drone_name>')
 def download_launch(drone_name):
@@ -88,7 +160,6 @@ def download_launch(drone_name):
     if not drone:
         abort(404, description="Дрон не найден")
     
-    # Проверяем существование файла
     launch_path = Path('launch_files') / f"{drone_name}.launch"
     if not launch_path.exists():
         generate_launch_file(drone)
@@ -101,29 +172,12 @@ def download_launch(drone_name):
         download_name=f"{drone_name}_mavros.launch"
     )
 
-@bp.route('/drone/<int:drone_id>/disconnect', methods=['POST'])
-def disconnect_drone(drone_id):
-    """Отключение дрона"""
-    drone = next((d for d in drones if d['id'] == drone_id), None)
-    if not drone:
-        abort(404, description="Дрон не найден")
-    
-    if 'process_id' not in drone:
-        return {"status": "error", "message": "Дрон не был подключен"}, 400
-    
-    try:
-        # Завершаем процесс roslaunch
-        os.kill(drone['process_id'], 9)
-        drone['status'] = 'disconnected'
-        del drone['process_id']
-        
-        return {
-            "status": "success",
-            "message": f"Дрон {drone['name']} отключен"
-        }, 200
-        
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }, 500
+@bp.route('/api/drones')
+def api_drones():
+    """API endpoint для получения списка дронов"""
+    return jsonify([{
+        'id': d['id'],
+        'name': d['name'],
+        'ip_address': d['ip_address'],
+        'status': d['status']
+    } for d in drones])
